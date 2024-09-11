@@ -5,7 +5,7 @@ FROM python:3.9-slim-buster
 WORKDIR /app
 
 # Copy the requirements.txt file into the container at /app
-COPY main.py config.xml requirements.txt ./
+COPY main.py requirements.txt ./
 
 # Install Python dependencies including Gunicorn
 RUN pip install --no-cache-dir -r requirements.txt
