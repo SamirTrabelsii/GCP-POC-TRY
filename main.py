@@ -8,7 +8,7 @@ from google.cloud import storage, bigquery, secretmanager
 from google.oauth2 import service_account
 import logging
 
-logging.basicConfig(filename='Ingestion.log', level=logging.DEBUG, format='%(asctime)s - %(message)s',
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
 
 app = Flask(__name__)
