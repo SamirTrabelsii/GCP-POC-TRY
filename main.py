@@ -4,46 +4,21 @@ import json
 from flask import Flask, jsonify, request
 import pandas as pd
 
-from google.cloud import storage, bigquery, secretmanager
+from google.cloud import storage, bigquery
 from google.oauth2 import service_account
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s',
+logging.basicConfig(filename='Ingestion.log', level=logging.DEBUG, format='%(asctime)s - %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
 
 app = Flask(__name__)
-# ________________
+json_file_path = os.path.join(os.path.dirname(__file__), 'fivetran-408613-a359e31bc8dd.json')
 
-# Google Cloud Project ID
-project_id = 'fivetran-408613'
-secret_name = 'CRun_sec'
-client_sm = secretmanager.SecretManagerServiceClient()
+credentials = service_account.Credentials.from_service_account_file(json_file_path)
+storage_client = storage.Client.from_service_account_json(json_file_path)
+bigquery_client = bigquery.Client.from_service_account_json(json_file_path)
 
-# Access the secret
-name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
-response = client_sm.access_secret_version(request={"name": name})
-
-# Extract the secret value (JSON string)
-secret_value_json = response.payload.data.decode("UTF-8")
-
-# Load the JSON string into a dictionary
-secret_value_dict = json.loads(secret_value_json)
-
-# Log the retrieved credentials
-# print("Retrieved credentials from Secret Manager: %s", secret_value_dict)
-
-# Use the dictionary to create credentials
-credentials = service_account.Credentials.from_service_account_info(
-    secret_value_dict
-)
-
-# Use the content to initialize the clients
-storage_client = storage.Client(credentials=credentials, project=credentials.project_id)
-bigquery_client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 project_id = credentials.project_id
-
-
-# ________________
 
 
 def load_json_to_dataframe(file_content):
@@ -56,9 +31,9 @@ def load_json_to_dataframe(file_content):
             try:
                 json_obj = json.loads(line)  # Load the JSON object
                 # Check if the required fields are present and the change_type is 'DELETE'
-                if 'payload' in json_obj:
+                if 'payload' in json_obj and json_obj['source_metadata']['change_type'] == 'DELETE':
                     record = {
-                        'change_type': json_obj['source_metadata']['change_type'],
+                        'uuid': json_obj['uuid'],
                         'source_timestamp': json_obj['source_timestamp'],
                         **json_obj['payload']
                     }
