@@ -8,7 +8,7 @@ from google.cloud import storage, bigquery, secretmanager
 from google.oauth2 import service_account
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s',
+logging.basicConfig(filename='Ingestion.log', level=logging.DEBUG, format='%(asctime)s - %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
 
 app = Flask(__name__)
@@ -56,9 +56,9 @@ def load_json_to_dataframe(file_content):
             try:
                 json_obj = json.loads(line)  # Load the JSON object
                 # Check if the required fields are present and the change_type is 'DELETE'
-                if 'payload' in json_obj and json_obj['source_metadata']['change_type'] == 'DELETE':
+                if 'payload' in json_obj:
                     record = {
-                        'uuid': json_obj['uuid'],
+                        'change_type': json_obj['source_metadata']['change_type'],
                         'source_timestamp': json_obj['source_timestamp'],
                         **json_obj['payload']
                     }
